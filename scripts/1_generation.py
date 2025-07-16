@@ -31,7 +31,7 @@ def process_and_save_image(path, out_path):
 
     np.save(out_path, img_norm)  # Sauvegarde au format .npy
 
-# === TRAITEMENT DE TOUS LES FICHIERS ===
+# === TRAITEMENT DE TOUS LES hh g FICHIERS ===
 for split in ['train', 'test']:
     print(f"\n🔄 Prétraitement des images: {split}")
     input_dir = input_dirs[split]

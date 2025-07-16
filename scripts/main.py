@@ -3,10 +3,10 @@ import subprocess
 # Liste des scripts à exécuter dans l'ordre
 scripts = [
     "scripts/1_generation.py",
-    "scripts/2_bruit.py",
+    "scripts/1.1Data_visualization_stage.py",
+    "scripts/2_Synthetic_noisy_data_generation.py",
     "scripts/3_backprojection.py",
-    "scripts/3_1_simulationctbruit.py",
-    "scripts/algo_iteratif.py",
+    "scripts/algo_iteratif4.py",
     "scripts/5_save.py",
     "scripts/6_entrainement.py",  # Si tu n'entraînes pas de modèle, tu peux commenter cette ligne
     "scripts/7_comparer.py"

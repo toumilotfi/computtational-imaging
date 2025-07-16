@@ -1,16 +1,7 @@
 import os
 import matplotlib.pyplot as plt
-from PIL import Image
 import numpy as np
-
-from skimage.metrics import peak_signal_noise_ratio as psnr
-from skimage.metrics import structural_similarity as ssim
-import matplotlib.pyplot as plt
-import os
-
-print(os.listdir('dataset/test_groundtruth'))
-print(os.listdir('dataset/test_reconstructions'))
-os.makedirs('dataset/test_groundtruth', exist_ok=True)
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 def load_images(folder):
     files = [f for f in os.listdir(folder) if f.endswith('.npy')]
@@ -21,33 +12,56 @@ def load_images(folder):
         print(f"Chargement {f} shape:", data.shape)
         images.append(data)
     return images, files
-# Charger images reconstruites et ground-truth test
-reconstructions, files = load_images('dataset/test_reconstructions')  # images sorties du modèle RISING
-ground_truths, _ = load_images('dataset/test_groundtruth')
+
+# Charger images
+reconstructions, rec_files = load_images('dataset/test_reconstructions')
+ground_truths, gt_files = load_images('dataset/test_groundtruth')
+
+if len(ground_truths) == 0 or len(reconstructions) == 0:
+    print("Erreur : un des dossiers est vide ou les fichiers sont invalides.")
+    exit()
+
+print(f"📦 {len(ground_truths)} Ground Truths | {len(reconstructions)} Reconstructions")
 
 psnr_scores = []
 ssim_scores = []
 
-for rec, gt in zip(reconstructions, ground_truths):
-    psnr_scores.append(psnr(gt, rec, data_range=1))
-    ssim_scores.append(ssim(gt, rec, data_range=1))
+for gt, rec in zip(ground_truths, reconstructions):
+    # Normaliser les images sur [0,1] si valeurs >1 (ex: 0-255)
+    gt_norm = gt.astype(np.float32)
+    rec_norm = rec.astype(np.float32)
 
-print(f"PSNR moyen: {np.mean(psnr_scores):.2f}")
-print(f"SSIM moyen: {np.mean(ssim_scores):.4f}")
-gt_path = "dataset/test_groundtruth/image01.npy"  # adapte le chemin si nécessaire
+    # Détection de l'échelle des données pour normaliser
+    max_val = max(gt_norm.max(), rec_norm.max())
+    if max_val > 1.0:
+        gt_norm /= 255.0
+        rec_norm /= 255.0
 
-gt = np.load(gt_path)
+    mse = np.mean((gt_norm - rec_norm) ** 2)
+    print(f"MSE: {mse:.8f}")
 
-# === Affichage des infos de l'image ===
-print("Min / Max de l'image ground-truth :", np.min(gt), np.max(gt))
+    if mse == 0:
+        psnr_val = float('inf')
+    else:
+        psnr_val = peak_signal_noise_ratio(gt_norm, rec_norm, data_range=1.0)
 
-# === Affichage de l'image ===
-plt.imshow(gt, cmap='gray')
-plt.title("Ground Truth")
-plt.colorbar()
-# Affichage comparatif d’une image au hasard
+    ssim_val = structural_similarity(gt_norm, rec_norm, data_range=1.0)
+
+    psnr_scores.append(psnr_val)
+    ssim_scores.append(ssim_val)
+
+# Moyennes (en ignorant inf dans PSNR pour moyenne)
+finite_psnr = [v for v in psnr_scores if np.isfinite(v)]
+mean_psnr = np.mean(finite_psnr) if finite_psnr else float('inf')
+mean_ssim = np.mean(ssim_scores)
+
+print(f"📊 PSNR moyen: {'inf' if mean_psnr == float('inf') else f'{mean_psnr:.2f}'}")
+print(f"📊 SSIM moyen: {mean_ssim:.4f}")
+
+# Affichage comparatif d’une image (index 0)
 idx = 0
 plt.figure(figsize=(12,4))
+
 plt.subplot(1,3,1)
 plt.title('Ground Truth')
 plt.imshow(ground_truths[idx], cmap='gray')
@@ -62,32 +76,5 @@ plt.subplot(1,3,3)
 plt.title('Différence')
 plt.imshow(np.abs(ground_truths[idx] - reconstructions[idx]), cmap='hot')
 plt.axis('off')
-ground_truths, gt_files = load_images('dataset/test_groundtruth')
-reconstructions, rec_files = load_images('dataset/test_reconstructions')
-
-print(f"Ground truths: {len(ground_truths)} fichiers")
-print(f"Reconstructions: {len(reconstructions)} fichiers")
-
-if len(ground_truths) == 0 or len(reconstructions) == 0:
-    print("Erreur : un des dossiers est vide ou les fichiers sont invalides.")
-    exit()
-
-# Test shapes
-print("Shape ground_truths[0]:", ground_truths[0].shape)
-print("Shape reconstructions[0]:", reconstructions[0].shape)
-
-# Ensuite calculs PSNR, SSIM etc...
-print("GT min/max:", ground_truths[0].min(), ground_truths[0].max())
-print("Rec min/max:", reconstructions[0].min(), reconstructions[0].max())
-gt = ground_truths[0].astype(np.float32) / 255.0
-rec = reconstructions[0].astype(np.float32) / 255.0
-from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-
-psnr = peak_signal_noise_ratio(gt, rec, data_range=1.0)
-ssim = structural_similarity(gt, rec, data_range=1.0)
-
-print(f"PSNR: {psnr:.4f}")
-print(f"SSIM: {ssim:.4f}")
-
 
 plt.show()

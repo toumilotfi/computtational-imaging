@@ -2,9 +2,11 @@ import os
 import numpy as np
 from skimage.transform import radon, iradon
 import numpy as np
+
   # Assure-toi que ce fichier existe et est dans le même dossier
 import numpy as np
-from algo_iteratif import chambolle_pock
+#from algo_iteratif import chambolle_pock
+from algo_iteratif4 import chambolle_pock;
 # Paramètres
 angles = np.linspace(0, 180, 60, endpoint=False)  # 60 angles uniformes
 lambd = 0.1

@@ -2,6 +2,7 @@
     "python.analysis.extraPaths": [
         "./scripts/4",
         "./scripts/4",
-        "./scripts/4_"
+        "./scripts/4_",
+        "./scripts/4-"
     ]
 }
